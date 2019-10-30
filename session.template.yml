@@ -1,0 +1,27 @@
+name: issre-tutorial-<firstname_lastname>
+digest: create
+predecessor: null
+
+services:
+   - name: radiomics
+     image_name: sconecuratedimages/issre2019:runtime-radiomics
+     mrenclaves: [<python mrenclave>]
+     command: python2.7 -B anonymise.py -i /mnt/input -o /mnt/output
+     pwd: /app
+     tags: [demo]
+     fspf_tag: <image fspf tag>
+     fspf_key: <image fspf key>
+     fspf_path: /fspf.pb
+
+volumes:
+    - name: input-videos
+      fspf_tag: <volume fspf tag>
+      fspf_key: <volume fspf key>
+
+images:
+   - name: sconecuratedimages/issre2019:runtime-radiomics
+     mrenclaves: [<python mrenclave>]
+     tags: [demo]
+     volumes:
+       - name: input-videos
+         path: /mnt/input

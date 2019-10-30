@@ -1,0 +1,27 @@
+name: issre-tutorial-fabio_silva
+digest: create
+predecessor: null
+
+services:
+   - name: radiomics
+     image_name: sconecuratedimages/issre2019:radiomics-fspf
+     mrenclaves: [5a30153e87e3067912b92f5126731136f3b3b84550dde5645887db356e0ae63d]
+     command: python2.7 -B anonymise.py -i /mnt/input -o /mnt/output
+     pwd: /app
+     tags: [demo]
+     fspf_tag: 1efedbc94a1da5182c252958a13a245c
+     fspf_key: 7fcefa090c73d93d47a20ad603ec5766e3537ac09b9b74b919ee9e5c5a9ba50b
+     fspf_path: /fspf.pb
+
+volumes:
+    - name: input-videos
+      fspf_tag: 9737584f495a4c5af9ea5cd5d36daba1
+      fspf_key: 74cc3802b19c62f555332f7dea8d323c55f90ed4aa287b90fdfcf1c6a8ea611b
+
+images:
+   - name: sconecuratedimages/issre2019:radiomics-fspf
+     mrenclaves: [5a30153e87e3067912b92f5126731136f3b3b84550dde5645887db356e0ae63d]
+     tags: [demo]
+     volumes:
+       - name: input-videos
+         path: /mnt/input

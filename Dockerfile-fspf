@@ -1,0 +1,68 @@
+FROM sconecuratedimages/issre2019:runtime-radiomics as base
+
+ADD app/ /app-raw/
+
+FROM sconecuratedimages/issre2019:runtime-alpine3.7 as intermediate
+
+COPY --from=base / rootvol/
+
+RUN mkdir -p rootvol/app
+
+RUN rm -rf rootvol/dev \
+           rootvol/proc \
+           rootvol/media \
+           rootvol/mnt \
+           rootvol/usr/share/X11 \
+           rootvol/usr/share/terminfo \
+           rootvol/usr/include/c++/ \
+           rootvol/usr/lib/tcl8.6 \
+           rootvol/usr/lib/gcc \
+           rootvol/sys \
+           rootvol/usr/include/c++
+
+ENV SCONE_VERSION=1 \
+    SCONE_HEAP=2G
+
+# Create FSPF
+RUN scone fspf create fspf.pb
+
+# Add / region
+RUN scone fspf addr fspf.pb / --kernel / --not-protected
+
+# Add /app region & files - encrypted
+RUN scone fspf addr fspf.pb /app --encrypted --kernel /app \
+ && scone fspf addf fspf.pb /app rootvol/app-raw rootvol/app \
+ && rm -rf rootvol/app-raw
+
+# Add system folders to autheticated regions
+RUN scone fspf addr fspf.pb /usr --kernel /usr --authenticated \
+ && scone fspf addf fspf.pb /usr rootvol/usr /usr
+
+RUN scone fspf addr fspf.pb /lib --kernel /lib --authenticated \
+ && scone fspf addf fspf.pb /lib rootvol/lib /lib
+
+# Finally, encrypt FSPF file
+RUN scone fspf encrypt fspf.pb
+
+# Same target image with fspf file copied from intermediate
+FROM sconecuratedimages/issre2019:runtime-alpine3.7
+
+COPY --from=intermediate rootvol /
+COPY --from=intermediate fspf.pb /
+
+WORKDIR /app
+
+#
+# SCONE environment variables - see more @ https://sconedocs.github.io/SCONE_ENV/
+#
+# Run dynamically-linked program inside of an enclave
+ENV SCONE_VERSION=1
+# Print the values of some of the SCONE environment variables during startup
+ENV SCONE_HEAP=3G
+# Set the size of the heap allocated for the program during the startup of the enclave
+ENV SCONE_STACK=5M
+# Set the size of the stack allocated to threads spawned in the enclave
+ENV SCONE_ALPINE=1
+# Permit to load shared libraries after startup.
+# The value '1' means that only authenticated libraries can be loaded.
+ENV SCONE_ALLOW_DLOPEN=1
